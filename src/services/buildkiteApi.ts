@@ -46,10 +46,16 @@ class BuildkiteApiClient {
       return response.data;
     } catch (error) {
       console.error('Error fetching builds:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Buildkite API token is required for private repositories');
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          throw new Error('Invalid API token or insufficient permissions');
+        } else if (error.response?.status === 404) {
+          throw new Error('Pipeline not found. Check organization and pipeline names.');
+        } else if (error.response?.status === 403) {
+          throw new Error('Access denied. Check API token permissions.');
+        }
       }
-      throw error;
+      throw new Error('Failed to fetch builds. Check your network connection.');
     }
   }
 

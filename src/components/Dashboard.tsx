@@ -298,6 +298,13 @@ export const Dashboard: React.FC = () => {
         <TableView data={data} />
       )}
 
+      {error && !loading && (
+        <div className="error-banner" style={{ marginTop: '1rem' }}>
+          <span>⚠️ {error}</span>
+          <button onClick={fetchData}>Retry</button>
+        </div>
+      )}
+
       {showSettings && (
         <Settings
           config={config}

@@ -15,6 +15,13 @@ interface CommitData {
 }
 
 export const TableView: React.FC<TableViewProps> = ({ data }) => {
+  if (!data) {
+    return (
+      <div className="table-view">
+        <div className="loading">Loading table data...</div>
+      </div>
+    );
+  }
   const [jobFilter, setJobFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<'name' | 'frequency' | 'status'>('frequency');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
