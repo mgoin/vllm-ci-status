@@ -36,10 +36,10 @@ Fork this repo and deploy to GitHub Pages:
 
 1. Fork this repository
 2. Go to Settings → Pages → Source: "GitHub Actions"  
-3. Push to main branch - auto-deploys
+3. Push to main branch - auto-deploys via GitHub Actions
 4. Access at `https://yourusername.github.io/vllm-ci-status/`
 
-Works with any static hosting (Vercel, Netlify, etc.).
+Also works with Vercel, Netlify, or any static hosting.
 
 ## Local Development
 
