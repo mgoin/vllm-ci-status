@@ -40,6 +40,7 @@ class BuildkiteApiClient {
             per_page: limit,
             page,
             include_retried_jobs: true,
+            state: ['running', 'scheduled', 'passed', 'failed', 'blocked', 'canceled'],
           },
         }
       );

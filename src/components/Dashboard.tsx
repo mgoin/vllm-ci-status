@@ -11,7 +11,7 @@ const DEFAULT_CONFIG: DashboardConfig = {
   pipelineSlug: 'ci',
   branch: 'main',
   apiToken: '',
-  buildLimit: 100
+  buildLimit: 50
 };
 
 export const Dashboard: React.FC = () => {

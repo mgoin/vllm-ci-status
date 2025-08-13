@@ -35,7 +35,7 @@ export const Settings: React.FC<SettingsProps> = ({ config, onConfigChange, onCl
       pipelineSlug: 'ci',
       branch: 'main',
       apiToken: formData.apiToken, // Keep existing token
-      buildLimit: 100
+      buildLimit: 50
     });
   };
 
@@ -95,10 +95,10 @@ export const Settings: React.FC<SettingsProps> = ({ config, onConfigChange, onCl
                 value={formData.buildLimit}
                 onChange={(e) => handleChange('buildLimit', e.target.value)}
               >
+                <option value="30">30 builds</option>
                 <option value="50">50 builds</option>
+                <option value="75">75 builds</option>
                 <option value="100">100 builds</option>
-                <option value="150">150 builds</option>
-                <option value="200">200 builds</option>
               </select>
               <small>Maximum number of recent builds to fetch</small>
             </div>

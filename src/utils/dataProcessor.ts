@@ -5,7 +5,14 @@ export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
   
   console.log(`Processing ${builds.length} builds`);
   
-  builds.forEach(build => {
+  // Filter builds that actually have script jobs (not empty builds)
+  const buildsWithJobs = builds.filter(build => 
+    build.jobs.some(job => job.type === 'script')
+  );
+  
+  console.log(`${buildsWithJobs.length} builds have actual jobs`);
+  
+  buildsWithJobs.forEach(build => {
     build.jobs.forEach(job => {
       if (job.type === 'script') {
         const key = job.step_key || job.name || job.id;
@@ -45,7 +52,7 @@ export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
       ...job,
       builds: job.builds
         .sort((a, b) => b.buildNumber - a.buildNumber)
-        .slice(0, 20)
+        .slice(0, 50) // Keep more builds per job for better commit coverage
     }))
     .sort((a, b) => {
       const priorityOrder = ['failed', 'running', 'passed', 'skipped', 'canceled'];
@@ -62,7 +69,7 @@ export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
   return {
     lastUpdated: new Date().toISOString(),
     jobs,
-    totalBuilds: builds.length
+    totalBuilds: buildsWithJobs.length
   };
 }
 

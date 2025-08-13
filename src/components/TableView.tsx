@@ -25,7 +25,7 @@ export const TableView: React.FC<TableViewProps> = ({ data }) => {
   const [jobFilter, setJobFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<'name' | 'frequency' | 'status'>('frequency');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [maxCommits, setMaxCommits] = useState<number>(20);
+  const [maxCommits, setMaxCommits] = useState<number>(30);
 
   const { commits, filteredJobs } = useMemo(() => {
     // Get all unique commits across all jobs
@@ -51,8 +51,9 @@ export const TableView: React.FC<TableViewProps> = ({ data }) => {
       });
     });
 
-    // Sort commits by build number (most recent first)
-    const sortedCommits = Array.from(commitMap.values())
+    // Only include commits that have at least one job with actual data
+    const commitsWithJobs = Array.from(commitMap.values())
+      .filter(commit => commit.jobs.size > 0)
       .sort((a, b) => b.buildNumber - a.buildNumber)
       .slice(0, maxCommits);
 
@@ -86,7 +87,7 @@ export const TableView: React.FC<TableViewProps> = ({ data }) => {
       return aVal > bVal ? 1 : -1;
     });
 
-    return { commits: sortedCommits, filteredJobs: filtered };
+    return { commits: commitsWithJobs, filteredJobs: filtered };
   }, [data, jobFilter, sortBy, sortOrder, maxCommits]);
 
   const getJobStateForCommit = (job: JobHealthStatus, commit: CommitData) => {
@@ -140,10 +141,10 @@ export const TableView: React.FC<TableViewProps> = ({ data }) => {
               onChange={(e) => setMaxCommits(Number(e.target.value))}
               className="sort-select"
             >
-              <option value="10">10</option>
-              <option value="20">20</option>
+              <option value="15">15</option>
               <option value="30">30</option>
               <option value="50">50</option>
+              <option value="75">75</option>
             </select>
           </div>
         </div>
