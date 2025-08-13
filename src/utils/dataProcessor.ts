@@ -77,9 +77,10 @@ export function getJobStateColor(state: BuildkiteJob['state']): string {
     case 'running':
       return '#3B82F6';
     case 'waiting':
-    case 'blocked':
     case 'unblocked':
       return '#F59E0B';
+    case 'blocked':
+      return '#9CA3AF';
     case 'canceled':
     case 'skipped':
       return '#6B7280';
@@ -99,11 +100,12 @@ export function getJobStateIcon(state: BuildkiteJob['state']): string {
     case 'running':
       return '🔄';
     case 'waiting':
-    case 'blocked':
     case 'unblocked':
       return '⏳';
+    case 'blocked':
+      return '⏸️';
     case 'canceled':
-      return '🚫';
+      return '⭕';
     case 'skipped':
       return '⏭️';
     default:

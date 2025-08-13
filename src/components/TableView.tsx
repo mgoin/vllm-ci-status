@@ -173,7 +173,11 @@ export const TableView: React.FC<TableViewProps> = ({ data }) => {
                 <span>Waiting</span>
               </div>
               <div className="legend-item">
-                <span className="legend-icon" style={{ backgroundColor: '#6B7280' }}>🚫</span>
+                <span className="legend-icon" style={{ backgroundColor: '#9CA3AF' }}>⏸️</span>
+                <span>Blocked</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-icon" style={{ backgroundColor: '#6B7280' }}>⭕</span>
                 <span>Canceled</span>
               </div>
               <div className="legend-item">
