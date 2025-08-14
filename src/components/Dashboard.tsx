@@ -22,6 +22,7 @@ export const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'cards' | 'table'>('table');
   const [filter, setFilter] = useState<string>('');
   const [stateFilter, setStateFilter] = useState<string>('all');
+  const [hideOptionalJobs, setHideOptionalJobs] = useState<boolean>(true);
   const [showSettings, setShowSettings] = useState(false);
   const [config, setConfig] = useState<DashboardConfig>(() => {
     const saved = localStorage.getItem('buildkite-dashboard-config');
@@ -67,7 +68,7 @@ export const Dashboard: React.FC = () => {
       
       console.log('Fetching builds from Buildkite API...');
       
-      const builds = await apiClient.getRecentBuilds(config.branch, config.buildLimit);
+      const builds = await apiClient.getRecentBuilds(config.branch, config.buildLimit, 30);
       console.log(`Fetched ${builds.length} builds`);
       
       const processed = processBuildsData(builds);
@@ -106,7 +107,8 @@ export const Dashboard: React.FC = () => {
     const matchesName = job.name.toLowerCase().includes(filter.toLowerCase()) ||
                        job.stepKey.toLowerCase().includes(filter.toLowerCase());
     const matchesState = stateFilter === 'all' || job.lastState === stateFilter;
-    return matchesName && matchesState;
+    const matchesOptionalFilter = !hideOptionalJobs || !job.isOptional;
+    return matchesName && matchesState && matchesOptionalFilter;
   }) || [];
 
   if (loading && !data) {
@@ -245,32 +247,41 @@ export const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {activeTab === 'cards' && (
-        <div className="dashboard-controls">
-          <div className="control-group">
-            <input
-              type="text"
-              placeholder="Filter jobs by name or step key..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="filter-input"
-            />
-          </div>
-          <div className="control-group">
-            <select
-              value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-              className="state-filter"
-            >
-              {stateOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="dashboard-controls">
+        <div className="control-group">
+          <input
+            type="text"
+            placeholder="Filter jobs by name or step key..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="filter-input"
+          />
         </div>
-      )}
+        <div className="control-group">
+          <select
+            value={stateFilter}
+            onChange={(e) => setStateFilter(e.target.value)}
+            className="state-filter"
+          >
+            {stateOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="control-group">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={hideOptionalJobs}
+              onChange={(e) => setHideOptionalJobs(e.target.checked)}
+              className="optional-filter-checkbox"
+            />
+            Hide optional jobs
+          </label>
+        </div>
+      </div>
 
       {error && (
         <div className="error-banner">
@@ -283,7 +294,7 @@ export const Dashboard: React.FC = () => {
         <div className="jobs-grid">
           {filteredJobs.length === 0 ? (
             <div className="no-results">
-              {filter || stateFilter !== 'all' 
+              {filter || stateFilter !== 'all' || hideOptionalJobs
                 ? 'No jobs match your filters' 
                 : 'No jobs found'
               }
@@ -295,7 +306,7 @@ export const Dashboard: React.FC = () => {
           )}
         </div>
       ) : (
-        <TableView data={data} />
+        <TableView data={{ ...data!, jobs: filteredJobs }} />
       )}
 
       {error && !loading && (

@@ -39,8 +39,8 @@ class BuildkiteApiClient {
             branch,
             per_page: limit,
             page,
-            include_retried_jobs: true,
-            state: ['running', 'scheduled', 'passed', 'failed', 'blocked', 'canceled'],
+            include_retried_jobs: false, // Reduce duplicates
+            state: ['running', 'passed', 'failed', 'blocked', 'canceled'], // Skip scheduled
           },
         }
       );
@@ -74,32 +74,46 @@ class BuildkiteApiClient {
 
   async getRecentBuilds(
     branch: string = 'main', 
-    buildLimit: number = 100
+    buildLimit: number = 100,
+    targetCommits: number = 30
   ): Promise<BuildkiteBuild[]> {
     try {
-      console.log(`Fetching up to ${buildLimit} recent builds...`);
+      console.log(`Fetching builds to get ~${targetCommits} unique commits (max ${buildLimit} builds)...`);
       
       const allBuilds: BuildkiteBuild[] = [];
+      const seenCommits = new Set<string>();
       let page = 1;
       let hasMore = true;
-      const perPage = Math.min(100, buildLimit); // API max is 100 per page
+      const perPage = 50; // Smaller pages for efficiency
       
-      while (hasMore && allBuilds.length < buildLimit) {
-        const remaining = buildLimit - allBuilds.length;
-        const pageSize = Math.min(perPage, remaining);
-        
-        console.log(`Fetching page ${page} (${pageSize} builds)...`);
-        const pageBuilds = await this.getBuilds(branch, pageSize, page);
+      while (hasMore && allBuilds.length < buildLimit && seenCommits.size < targetCommits) {
+        console.log(`Fetching page ${page} (have ${seenCommits.size} unique commits)...`);
+        const pageBuilds = await this.getBuilds(branch, perPage, page);
         
         if (pageBuilds.length === 0) {
           hasMore = false;
           break;
         }
         
-        allBuilds.push(...pageBuilds);
+        // Filter builds that have actual jobs and track unique commits
+        const buildsWithJobs = pageBuilds.filter(build => {
+          const hasJobs = build.jobs.some(job => job.type === 'script');
+          if (hasJobs) {
+            seenCommits.add(build.commit);
+          }
+          return hasJobs;
+        });
+        
+        allBuilds.push(...buildsWithJobs);
+        
+        // Stop early if we have enough unique commits
+        if (seenCommits.size >= targetCommits) {
+          console.log(`Found ${targetCommits} unique commits, stopping early`);
+          hasMore = false;
+        }
         
         // Stop if we got fewer builds than requested (end of data)
-        if (pageBuilds.length < pageSize) {
+        if (pageBuilds.length < perPage) {
           hasMore = false;
         }
         
@@ -110,7 +124,7 @@ class BuildkiteApiClient {
         .slice(0, buildLimit) // Ensure we don't exceed the limit
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
-      console.log(`Loaded ${finalBuilds.length} builds from ${page - 1} pages`);
+      console.log(`Loaded ${finalBuilds.length} builds with ${seenCommits.size} unique commits from ${page - 1} pages`);
       return finalBuilds;
       
     } catch (error) {

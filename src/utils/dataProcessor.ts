@@ -1,18 +1,36 @@
 import { BuildkiteBuild, BuildkiteJob, JobHealthStatus, DashboardData } from '../types/buildkite';
 
+export function isOptionalJob(job: BuildkiteJob): boolean {
+  if (job.soft_failed === true) {
+    return true;
+  }
+  
+  const name = job.name.toLowerCase();
+  const stepKey = (job.step_key || '').toLowerCase();
+  
+  const optionalPatterns = [
+    /optional/,
+    /allow.?fail/,
+    /non.?blocking/,
+    /\(optional\)/,
+    /\[optional\]/,
+    /experimental/,
+    /beta/,
+    /benchmark/,
+    /perf/
+  ];
+  
+  return optionalPatterns.some(pattern => 
+    pattern.test(name) || pattern.test(stepKey)
+  );
+}
+
 export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
   const jobMap = new Map<string, JobHealthStatus>();
   
   console.log(`Processing ${builds.length} builds`);
   
-  // Filter builds that actually have script jobs (not empty builds)
-  const buildsWithJobs = builds.filter(build => 
-    build.jobs.some(job => job.type === 'script')
-  );
-  
-  console.log(`${buildsWithJobs.length} builds have actual jobs`);
-  
-  buildsWithJobs.forEach(build => {
+  builds.forEach(build => {
     build.jobs.forEach(job => {
       if (job.type === 'script') {
         const key = job.step_key || job.name || job.id;
@@ -23,6 +41,7 @@ export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
             name: job.name,
             lastState: job.state,
             frequency: 0,
+            isOptional: isOptionalJob(job),
             builds: []
           });
         }
@@ -33,6 +52,11 @@ export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
         if (!jobStatus.lastRun || new Date(job.created_at) > new Date(jobStatus.lastRun)) {
           jobStatus.lastRun = job.created_at;
           jobStatus.lastState = job.state;
+        }
+        
+        // Update optional status if any instance of this job is optional
+        if (!jobStatus.isOptional && isOptionalJob(job)) {
+          jobStatus.isOptional = true;
         }
         
         jobStatus.builds.push({
@@ -69,7 +93,7 @@ export function processBuildsData(builds: BuildkiteBuild[]): DashboardData {
   return {
     lastUpdated: new Date().toISOString(),
     jobs,
-    totalBuilds: buildsWithJobs.length
+    totalBuilds: builds.length
   };
 }
 

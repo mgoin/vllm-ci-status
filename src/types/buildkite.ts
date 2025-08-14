@@ -55,6 +55,7 @@ export interface JobHealthStatus {
   lastRun?: string;
   lastState: BuildkiteJob['state'];
   frequency: number;
+  isOptional: boolean;
   builds: Array<{
     buildNumber: number;
     commit: string;
